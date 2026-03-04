@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, Dimensions } from 'react-native';
+import { Image, Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import type { MainTabParamList } from './types';
 
@@ -43,8 +43,8 @@ export default function MainTabs() {
           width: '80%', 
           alignSelf: 'center',
           marginLeft: 40, 
-
-          bottom: 25,
+          bottom: Platform.OS === 'android' ? 45 : 25,
+          
           height: 64,
           borderRadius: 32,
           backgroundColor: '#1E5F52',

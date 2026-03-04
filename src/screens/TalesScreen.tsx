@@ -21,13 +21,14 @@ const BG = require('../assets/room_bg.png');
 const COOKIE = require('../assets/cookie.png');
 const PROJECTOR = require('../assets/projector.png');
 
-const COOKIES_KEY = 'cookies_total_v1';
+const COOKIES_KEY = 'cookies_balance_v1';
 const INITIAL_GIFT = 200;
 
 export default function TalesScreen() {
   const { width: W, height: H } = useWindowDimensions();
   const [cookies, setCookies] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  
   const isTiny = H < 690;
   const headerH = Math.max(H * 0.06, 46);
   const cardH = isTiny ? 80 : 95;
@@ -49,6 +50,9 @@ export default function TalesScreen() {
 
   useFocusEffect(
     useCallback(() => {
+
+      setSelectedId(null);
+
       (async () => {
         const stored = await AsyncStorage.getItem(COOKIES_KEY);
         if (stored == null) {
@@ -83,6 +87,7 @@ export default function TalesScreen() {
               <Text style={s.coinsText}>{cookies}</Text>
             </View>
           </View>
+
           <Animated.View style={[s.content, { opacity: fadeAnim }]}>
             {selectedTale ? (
               <View style={s.readerWrapper}>
@@ -95,10 +100,10 @@ export default function TalesScreen() {
 
                 <View style={s.navRow}>
                   <Pressable onPress={onShare} style={s.goldBtn}>
-                    <Text style={s.goldIcon}>⤴︎</Text>
+                    <Text style={s.goldIcon}>Share</Text>
                   </Pressable>
                   <Pressable onPress={() => setSelectedId(null)} style={s.goldBtn}>
-                    <Text style={s.goldIcon}>← Назад</Text>
+                    <Text style={s.goldIcon}>← Back</Text>
                   </Pressable>
                 </View>
               </View>
@@ -116,7 +121,7 @@ export default function TalesScreen() {
                         onPress={() => setSelectedId(tale.id)}
                         style={({ pressed }) => [s.openBtn, pressed && s.pressed]}
                       >
-                        <Text style={s.openBtnText}>Открыть</Text>
+                        <Text style={s.openBtnText}>Read Now</Text>
                       </Pressable>
                     </View>
                   </View>
@@ -170,7 +175,7 @@ const s = StyleSheet.create({
   coinsText: { color: '#EAF7E7', fontWeight: '900', fontSize: 18 },
 
   content: { flex: 1 },
-  listPadding: { paddingHorizontal: 16, paddingBottom: 80, gap: 12 },
+  listPadding: { paddingHorizontal: 16, paddingBottom: 120, gap: 12 },
 
   card: {
     flexDirection: 'row',

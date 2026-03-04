@@ -18,7 +18,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const BG = require('../assets/hunt_bg.png');
 const COOKIE = require('../assets/cookie.png');
 const AVATAR = require('../assets/lalubu_light.png');
-const COOKIES_KEY = 'cookies_total_v1';
+const COOKIES_KEY = 'cookies_balance_v1';
 const INITIAL_GIFT = 200;
 
 async function readCookies(): Promise<number | null> {
@@ -88,23 +88,18 @@ const FACTS: string[] = [
 export default function FactsScreen() {
   const insets = useSafeAreaInsets();
   const { width: W, height: H } = useWindowDimensions();
-
   const isSmall = H < 740 || W < 360;
   const isTiny = H < 690;
-
+  
   const padX = clamp(W * 0.04, 12, 18);
-
   const headerH = clamp(H * 0.06, 40, 46);
   const titleFont = clamp(W * 0.05, 16, 19);
   const coinsFont = clamp(W * 0.06, 18, 22);
-
   const cardRadius = clamp(W * 0.045, 16, 20);
   const cardPadV = clamp(H * 0.016, 12, 14);
   const cardPadH = clamp(W * 0.04, 14, 18);
-
   const avatarSize = clamp(W * 0.14, 44, 56);
   const factFont = clamp(W * 0.042, 13, 15);
-
   const topPad = Platform.OS === 'android' ? (StatusBar.currentHeight ?? 0) : 0;
 
   const [cookies, setCookies] = useState(0);
@@ -112,11 +107,9 @@ export default function FactsScreen() {
   useFocusEffect(
     useCallback(() => {
       let alive = true;
-
       (async () => {
         const stored = await readCookies();
         if (!alive) return;
-
         if (stored == null) {
           setCookies(INITIAL_GIFT);
           await writeCookies(INITIAL_GIFT);
@@ -124,12 +117,12 @@ export default function FactsScreen() {
           setCookies(stored);
         }
       })();
-
       return () => {
         alive = false;
       };
     }, [])
   );
+
   const headIn = useRef(new Animated.Value(0)).current;
   const listIn = useRef(new Animated.Value(0)).current;
 
@@ -157,13 +150,11 @@ export default function FactsScreen() {
       const k = Math.min(index, 10);
       const start = k * 0.08;
       const end = start + 0.25;
-
       const opacity = listIn.interpolate({
         inputRange: [start, end],
         outputRange: [0, 1],
         extrapolate: 'clamp',
       });
-
       const translateY = listIn.interpolate({
         inputRange: [start, end],
         outputRange: [10, 0],
@@ -187,7 +178,6 @@ export default function FactsScreen() {
           <View style={{ width: avatarSize, height: avatarSize, alignItems: 'center', justifyContent: 'center' }}>
             <Image source={AVATAR} style={{ width: avatarSize, height: avatarSize }} resizeMode="contain" />
           </View>
-
           <View style={{ flex: 1, paddingLeft: clamp(W * 0.03, 10, 14) }}>
             <Text style={[styles.factText, { fontSize: factFont, lineHeight: Math.round(factFont * 1.25) }]}>
               {item.text}
@@ -202,7 +192,7 @@ export default function FactsScreen() {
   const listTopGap = clamp(H * 0.03, 18, 22);
   const rowGap = clamp(H * 0.018, 14, 16);
   const bottomSafe = Math.max(insets.bottom, 10);
-  const bottomExtra = isTiny ? 110 : isSmall ? 95 : 86; 
+  const bottomExtra = (isTiny ? 110 : isSmall ? 95 : 86) + 40; 
 
   return (
     <View style={styles.flex}>
@@ -232,7 +222,6 @@ export default function FactsScreen() {
             <View style={[styles.titlePill, { height: headerH }]}>
               <Text style={[styles.titleText, { fontSize: titleFont }]}>Smart Facts</Text>
             </View>
-
             <View style={[styles.coinsPill, { height: headerH, width: clamp(W * 0.32, 110, 130) }]}>
               <Image
                 source={COOKIE}
@@ -265,9 +254,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: '#000' },
   bg: { flex: 1 },
   safe: { flex: 1 },
-
   topRow: { flexDirection: 'row', alignItems: 'center' },
-
   titlePill: {
     flex: 1,
     borderRadius: 12,
@@ -283,7 +270,6 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: 0.2,
   },
-
   coinsPill: {
     borderRadius: 12,
     backgroundColor: 'rgba(40, 75, 55, 0.55)',
@@ -299,7 +285,6 @@ const styles = StyleSheet.create({
     color: '#EAF7E7',
     fontWeight: '900',
   },
-
   card: {
     backgroundColor: 'rgba(155, 215, 230, 0.90)',
     borderWidth: 2,
@@ -307,7 +292,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-
   factText: {
     color: 'rgba(5, 15, 20, 0.90)',
     fontWeight: '700',

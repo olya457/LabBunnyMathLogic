@@ -25,7 +25,9 @@ type ShopItem = {
   icon: any;
 };
 
-const COST_GROW = 200;
+const COST_TO_TEEN = 200;  
+const COST_TO_ADULT = 300; 
+
 const COST_DOWNSIZE = 70;
 
 const BG = require('../assets/room_bg.png');
@@ -39,7 +41,7 @@ const IT_PLANT = require('../assets/room_item_plant.png');
 const IT_FORMULA = require('../assets/room_item_formula.png');
 const COOKIE_ICON = require('../assets/cookie.png');
 
-const COOKIES_KEY = 'cookies_total_v1';
+const COOKIES_KEY = 'cookies_balance_v1';
 const INITIAL_GIFT = 200;
 const ROOM_STAGE_KEY = 'room_bunny_stage_v1';
 const ROOM_OWNED_KEY = 'room_owned_items_v1';
@@ -105,8 +107,6 @@ export default function RoomScreen() {
   const headerH = clamp(H * 0.06, 40, 46);
   const titleFont = clamp(W * 0.05, 16, 19);
   const coinsFont = clamp(W * 0.06, 18, 22);
-  const plusSize = clamp(W * 0.14, 46, 56);
-  const plusFont = clamp(W * 0.08, 24, 30);
   const bunnyW = clamp(W * 0.78, 220, 290);
   const bunnyH = clamp(H * 0.34, 240, 320);
   const growW = clamp(W * 0.84, 250, 300);
@@ -131,6 +131,7 @@ export default function RoomScreen() {
         } else {
           setCookies(storedCookies);
         }
+
         const storedStage = await readNumber(ROOM_STAGE_KEY);
         if (!alive) return;
         if (storedStage == null) {
@@ -140,6 +141,7 @@ export default function RoomScreen() {
           const safeStage: BunnyStage = storedStage <= 0 ? 0 : storedStage === 1 ? 1 : 2;
           setStage(safeStage);
         }
+
         const storedOwned = await readJSON<Record<string, boolean>>(ROOM_OWNED_KEY);
         if (!alive) return;
         if (storedOwned == null) {
@@ -150,7 +152,9 @@ export default function RoomScreen() {
           setOwned(sanitizeOwned(storedOwned));
         }
       })();
-      return () => { alive = false; };
+      return () => {
+        alive = false;
+      };
     }, [])
   );
 
@@ -160,13 +164,16 @@ export default function RoomScreen() {
     return BUNNY_ADULT;
   }, [stage]);
 
-  const items: ShopItem[] = useMemo(() => [
-    { id: 'bed', cost: 150, icon: IT_BED },
-    { id: 'table', cost: 150, icon: IT_TABLE },
-    { id: 'mat', cost: 150, icon: IT_MAT },
-    { id: 'plant', cost: 150, icon: IT_PLANT },
-    { id: 'formula', cost: 150, icon: IT_FORMULA },
-  ], []);
+  const items: ShopItem[] = useMemo(
+    () => [
+      { id: 'bed', cost: 150, icon: IT_BED },
+      { id: 'table', cost: 150, icon: IT_TABLE },
+      { id: 'mat', cost: 150, icon: IT_MAT },
+      { id: 'plant', cost: 150, icon: IT_PLANT },
+      { id: 'formula', cost: 150, icon: IT_FORMULA },
+    ],
+    []
+  );
 
   const persistStage = useCallback(async (next: BunnyStage) => {
     setStage(next);
@@ -178,21 +185,28 @@ export default function RoomScreen() {
     await writeJSON(ROOM_OWNED_KEY, next);
   }, []);
 
-  const spend = useCallback(async (cost: number) => {
-    if (cookies < cost) return false;
-    const next = cookies - cost;
-    setCookies(next);
-    await writeNumber(COOKIES_KEY, next);
-    return true;
-  }, [cookies]);
+  const spend = useCallback(
+    async (cost: number) => {
+      if (cookies < cost) return false;
+      const next = cookies - cost;
+      setCookies(next);
+      await writeNumber(COOKIES_KEY, next);
+      return true;
+    },
+    [cookies]
+  );
 
   const onGrow = useCallback(async () => {
     if (stage === 2) return;
-    const ok = await spend(COST_GROW);
+
+    const cost = stage === 0 ? COST_TO_TEEN : COST_TO_ADULT;
+    const ok = await spend(cost);
+
     if (!ok) {
-      Alert.alert('Not enough cookies', `You need ${COST_GROW} cookies.`);
+      Alert.alert('Not enough cookies', `You need ${cost} cookies.`);
       return;
     }
+
     const nextStage: BunnyStage = stage === 0 ? 1 : 2;
     await persistStage(nextStage);
   }, [spend, stage, persistStage]);
@@ -208,34 +222,25 @@ export default function RoomScreen() {
     await persistStage(nextStage);
   }, [spend, stage, persistStage]);
 
-  const buyItem = useCallback(async (item: ShopItem) => {
-    if (owned[item.id]) {
-      Alert.alert('Already owned', 'This item is already in your room.');
-      return;
-    }
-    if (cookies < item.cost) {
-      Alert.alert('Not enough cookies', `You need ${item.cost} cookies.`);
-      return;
-    }
-    Alert.alert('Buy item', `${item.cost} cookies`, [
-      { text: 'No', style: 'cancel' },
-      { text: 'Yes', onPress: async () => {
-          const ok = await spend(item.cost);
-          if (!ok) return;
-          const next = { ...owned, [item.id]: true };
-          await persistOwned(next);
-        }
-      },
-    ]);
-  }, [cookies, owned, spend, persistOwned]);
+  const buyItem = useCallback(
+    async (item: ShopItem) => {
+      if (owned[item.id]) return;
+      if (cookies < item.cost) {
+        Alert.alert('Not enough cookies', `You need ${item.cost} cookies.`);
+        return;
+      }
+      const ok = await spend(item.cost);
+      if (!ok) return;
+      const next = { ...owned, [item.id]: true };
+      await persistOwned(next);
+    },
+    [cookies, owned, spend, persistOwned]
+  );
 
   const topPad = Platform.OS === 'android' ? (StatusBar.currentHeight ?? 0) : 0;
-  const gridCols = isSmall ? 2 : 3;
-  const gap = clamp(W * 0.035, 10, 14);
-  const modalInnerPad = clamp(W * 0.045, 16, 18);
-  const modalW = W * 0.92;
-  const gridItemW = (modalW - modalInnerPad * 2 - gap * (gridCols - 1)) / gridCols;
-  const gridItemRadius = clamp(W * 0.05, 16, 20);
+  const gap = 12;
+  const modalW = clamp(W * 0.85, 280, 320);
+  const gridItemW = (modalW - 32 - gap) / 2;
 
   return (
     <View style={styles.flex}>
@@ -247,7 +252,7 @@ export default function RoomScreen() {
               <Text style={[styles.titleText, { fontSize: titleFont }]}>Bunny Room</Text>
             </View>
             <View style={[styles.coinsPill, { height: headerH, width: clamp(W * 0.32, 110, 130) }]}>
-              <Image source={COOKIE_ICON} style={{ width: clamp(W * 0.05, 18, 20), height: clamp(W * 0.05, 18, 20) }} resizeMode="contain" />
+              <Image source={COOKIE_ICON} style={{ width: 18, height: 18 }} resizeMode="contain" />
               <Text style={[styles.coinsText, { fontSize: coinsFont }]}>{cookies}</Text>
             </View>
           </View>
@@ -257,43 +262,67 @@ export default function RoomScreen() {
               <Pressable
                 onPress={onDownsize}
                 disabled={stage === 0}
-                style={({ pressed }) => [
-                  styles.downsizeBtn,
-                  { height: clamp(H * 0.045, 32, 36), borderRadius: 10, paddingHorizontal: clamp(W * 0.04, 12, 14) },
-                  stage === 0 && styles.downsizeBtnDisabled,
-                  pressed && stage !== 0 && styles.pressed,
-                ]}
+                style={[styles.downsizeBtn, stage === 0 && styles.downsizeBtnDisabled]}
               >
-                <Text style={[styles.downsizeText, { fontSize: clamp(W * 0.04, 12, 14) }, stage === 0 && styles.downsizeTextDisabled]}>Downsize Bunny</Text>
+                <Text style={[styles.downsizeText, stage === 0 && styles.downsizeTextDisabled]}>Downsize Bunny</Text>
               </Pressable>
             </View>
 
             <View style={styles.roomArea}>
-              {owned.bed && <Image source={IT_BED} style={[styles.item, { right: clamp(W * 0.09, 28, 46), bottom: clamp(H * 0.34, 220, 270), width: clamp(W * 0.38, 120, 155), height: clamp(H * 0.13, 90, 120) }]} resizeMode="contain" />}
-              {owned.table && <Image source={IT_TABLE} style={[styles.item, { left: clamp(W * 0.10, 30, 52), bottom: clamp(H * 0.36, 240, 285), width: clamp(W * 0.30, 95, 120), height: clamp(H * 0.11, 80, 105) }]} resizeMode="contain" />}
-              {owned.mat && <Image source={IT_MAT} style={[styles.item, { right: clamp(W * 0.12, 36, 60), bottom: clamp(H * 0.30, 200, 230), width: clamp(W * 0.33, 105, 135), height: clamp(H * 0.09, 60, 78), opacity: 0.95 }]} resizeMode="contain" />}
-              {owned.plant && <Image source={IT_PLANT} style={[styles.item, { left: clamp(W * 0.10, 30, 52), bottom: clamp(H * 0.31, 210, 240), width: clamp(W * 0.26, 84, 98), height: clamp(W * 0.26, 84, 98) }]} resizeMode="contain" />}
-              {owned.formula && <Image source={IT_FORMULA} style={[styles.item, { top: clamp(H * 0.18, 110, 140), alignSelf: 'center', width: clamp(W * 0.62, 200, 240), height: clamp(H * 0.09, 70, 92), opacity: 0.9 }]} resizeMode="contain" />}
+              {owned.bed && (
+                <Image
+                  source={IT_BED}
+                  style={[styles.item, { right: 40, bottom: 240, width: 140, height: 110 }]}
+                  resizeMode="contain"
+                />
+              )}
+              {owned.table && (
+                <Image
+                  source={IT_TABLE}
+                  style={[styles.item, { left: 40, bottom: 260, width: 110, height: 95 }]}
+                  resizeMode="contain"
+                />
+              )}
+              {owned.mat && (
+                <Image
+                  source={IT_MAT}
+                  style={[styles.item, { right: 50, bottom: 210, width: 120, height: 70 }]}
+                  resizeMode="contain"
+                />
+              )}
+              {owned.plant && (
+                <Image
+                  source={IT_PLANT}
+                  style={[styles.item, { left: 40, bottom: 220, width: 90, height: 90 }]}
+                  resizeMode="contain"
+                />
+              )}
+              {owned.formula && (
+                <Image
+                  source={IT_FORMULA}
+                  style={[styles.item, { top: 120, alignSelf: 'center', width: 220, height: 80 }]}
+                  resizeMode="contain"
+                />
+              )}
 
-              <View style={[styles.sideLeft, { left: padX, top: '50%', gap: clamp(H * 0.02, 12, 16) }]}>
-                <Pressable onPress={() => setShopOpen(true)} style={({ pressed }) => [styles.plusBtn, { width: plusSize, height: plusSize, borderRadius: 12 }, pressed && styles.pressed]}>
-                  <Text style={[styles.plusText, { fontSize: plusFont }]}>{'+'}</Text>
+              <View style={[styles.sideLeft, { left: padX, top: '45%', gap: 14 }]}>
+                <Pressable onPress={() => setShopOpen(true)} style={styles.plusBtn}>
+                  <Text style={styles.plusText}>+</Text>
                 </Pressable>
-                <Pressable onPress={() => setShopOpen(true)} style={({ pressed }) => [styles.plusBtn, { width: plusSize, height: plusSize, borderRadius: 12 }, pressed && styles.pressed]}>
-                  <Text style={[styles.plusText, { fontSize: plusFont }]}>{'+'}</Text>
+                <Pressable onPress={() => setShopOpen(true)} style={styles.plusBtn}>
+                  <Text style={styles.plusText}>+</Text>
                 </Pressable>
               </View>
 
-              <View style={[styles.sideRight, { right: padX, top: '50%', gap: clamp(H * 0.02, 12, 16) }]}>
-                <Pressable onPress={() => setShopOpen(true)} style={({ pressed }) => [styles.plusBtn, { width: plusSize, height: plusSize, borderRadius: 12 }, pressed && styles.pressed]}>
-                  <Text style={[styles.plusText, { fontSize: plusFont }]}>{'+'}</Text>
+              <View style={[styles.sideRight, { right: padX, top: '45%', gap: 14 }]}>
+                <Pressable onPress={() => setShopOpen(true)} style={styles.plusBtn}>
+                  <Text style={styles.plusText}>+</Text>
                 </Pressable>
-                <Pressable onPress={() => setShopOpen(true)} style={({ pressed }) => [styles.plusBtn, { width: plusSize, height: plusSize, borderRadius: 12 }, pressed && styles.pressed]}>
-                  <Text style={[styles.plusText, { fontSize: plusFont }]}>{'+'}</Text>
+                <Pressable onPress={() => setShopOpen(true)} style={styles.plusBtn}>
+                  <Text style={styles.plusText}>+</Text>
                 </Pressable>
               </View>
 
-              {/* Bunny position raised by total of 40px (20px from previous request + 20px now) */}
               <View style={[styles.bunnyWrap, { bottom: clamp(H * 0.14, 106, 130) + 40 }]}>
                 <Image source={bunnyImg} style={{ width: bunnyW, height: bunnyH }} resizeMode="contain" />
               </View>
@@ -302,7 +331,7 @@ export default function RoomScreen() {
                 <Pressable
                   onPress={onGrow}
                   disabled={stage === 2}
-                  style={({ pressed }) => [styles.growBtn, { width: growW, height: growH, borderRadius: 12 }, stage === 2 && styles.growBtnDisabled, pressed && stage !== 2 && styles.pressed]}
+                  style={[styles.growBtn, { width: growW, height: growH }, stage === 2 && styles.growBtnDisabled]}
                 >
                   <Text style={[styles.growText, { fontSize: growFont }]}>Grow Bunny</Text>
                 </Pressable>
@@ -312,26 +341,29 @@ export default function RoomScreen() {
 
           <Modal transparent visible={shopOpen} animationType="fade" onRequestClose={() => setShopOpen(false)}>
             <View style={styles.modalOverlay}>
-              <View style={[styles.modalCard, { width: '92%', borderRadius: 22, padding: modalInnerPad }]}>
-                <Text style={[styles.modalTitle, { fontSize: clamp(W * 0.07, 22, 26) }]}>Accessories</Text>
-                <Text style={[styles.modalSub, { fontSize: clamp(W * 0.04, 12, 14) }]}>Tap an item to buy</Text>
-                <View style={[styles.grid, { marginTop: 16, rowGap: gap, columnGap: gap }]}>
-                  {items.map((it) => {
-                    const isOwned = owned[it.id];
-                    return (
-                      <Pressable key={it.id} onPress={() => buyItem(it)} disabled={isOwned} style={({ pressed }) => [styles.gridItem, { width: gridItemW, height: gridItemW, borderRadius: gridItemRadius, opacity: isOwned ? 0.55 : 1 }, pressed && !isOwned && styles.pressed]}>
-                        <Image source={it.icon} style={styles.gridIcon} resizeMode="contain" />
-                        <View style={[styles.pricePill, { height: clamp(H * 0.04, 26, 28), borderRadius: 999 }]}>
-                          <Image source={COOKIE_ICON} style={{ width: clamp(W * 0.04, 14, 16), height: clamp(W * 0.04, 14, 16) }} resizeMode="contain" />
-                          <Text style={[styles.priceText, { fontSize: clamp(W * 0.045, 14, 16) }]}>{it.cost}</Text>
-                        </View>
-                        {isOwned && <View style={styles.ownedBadge} />}
-                      </Pressable>
-                    );
-                  })}
+              <View style={[styles.modalCard, { width: modalW }]}>
+                <Text style={styles.modalTitle}>Shop</Text>
+                <View style={[styles.grid, { gap }]}>
+                  {items.map((it) => (
+                    <Pressable
+                      key={it.id}
+                      onPress={() => buyItem(it)}
+                      style={[
+                        styles.gridItem,
+                        { width: gridItemW, height: gridItemW + 20 },
+                        owned[it.id] && styles.ownedItem,
+                      ]}
+                    >
+                      <Image source={it.icon} style={styles.gridIcon} resizeMode="contain" />
+                      <View style={styles.pricePill}>
+                        <Image source={COOKIE_ICON} style={{ width: 12, height: 12 }} />
+                        <Text style={styles.priceText}>{owned[it.id] ? 'Owned' : it.cost}</Text>
+                      </View>
+                    </Pressable>
+                  ))}
                 </View>
-                <Pressable onPress={() => setShopOpen(false)} style={({ pressed }) => [styles.closeBtn, { height: clamp(H * 0.075, 50, 56), borderRadius: 16, marginTop: clamp(H * 0.02, 14, 18) }, pressed && styles.pressed]}>
-                  <Text style={[styles.closeText, { fontSize: clamp(W * 0.06, 18, 20) }]}>Close</Text>
+                <Pressable onPress={() => setShopOpen(false)} style={styles.closeBtn}>
+                  <Text style={styles.closeText}>Close</Text>
                 </Pressable>
               </View>
             </View>
@@ -346,38 +378,93 @@ const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: '#000' },
   bg: { flex: 1 },
   safe: { flex: 1 },
+
   topRow: { flexDirection: 'row', alignItems: 'center', zIndex: 10 },
-  titlePill: { flex: 1, borderRadius: 12, backgroundColor: 'rgba(15, 55, 35, 0.65)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)', alignItems: 'center', justifyContent: 'center' },
-  titleText: { color: 'rgba(255,255,255,0.92)', fontWeight: '900' },
-  coinsPill: { borderRadius: 12, backgroundColor: 'rgba(15, 55, 35, 0.65)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
-  coinsText: { color: 'rgba(255,255,255,0.92)', fontWeight: '900' },
+  titlePill: {
+    flex: 1,
+    borderRadius: 12,
+    backgroundColor: 'rgba(15, 55, 35, 0.75)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  titleText: { color: '#FFF', fontWeight: '900' },
+  coinsPill: {
+    borderRadius: 12,
+    backgroundColor: 'rgba(15, 55, 35, 0.75)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  coinsText: { color: '#FFF', fontWeight: '900' },
+
   raisedContent: { flex: 1 },
-  downsizeBtn: { alignSelf: 'flex-start', backgroundColor: 'rgba(15, 55, 35, 0.35)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', justifyContent: 'center' },
-  downsizeBtnDisabled: { opacity: 0.35 },
-  downsizeText: { color: 'rgba(255,255,255,0.75)', fontWeight: '800' },
-  downsizeTextDisabled: { color: 'rgba(255,255,255,0.55)' },
+
+  downsizeBtn: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(15, 55, 35, 0.5)',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    height: 32,
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  downsizeBtnDisabled: { opacity: 0.3 },
+  downsizeText: { color: '#FFF', fontWeight: '800', fontSize: 12 },
+  downsizeTextDisabled: { color: '#AAA' },
+
   roomArea: { flex: 1 },
   item: { position: 'absolute' },
+
   sideLeft: { position: 'absolute', transform: [{ translateY: -50 }] },
   sideRight: { position: 'absolute', transform: [{ translateY: -50 }] },
-  plusBtn: { backgroundColor: 'rgba(15, 55, 35, 0.55)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.14)', alignItems: 'center', justifyContent: 'center' },
-  plusText: { color: 'rgba(255,255,255,0.90)', fontWeight: '900', marginTop: -2 },
+
+  plusBtn: {
+    backgroundColor: 'rgba(15, 55, 35, 0.6)',
+    width: 50,
+    height: 50,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  plusText: { color: '#FFF', fontSize: 28, fontWeight: '900' },
+
   bunnyWrap: { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
+
   growWrap: { position: 'absolute', left: 0, right: 0, bottom: 0, alignItems: 'center' },
-  growBtn: { backgroundColor: '#E7C35A', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.22, shadowRadius: 12, shadowOffset: { width: 0, height: 10 }, elevation: 6 },
-  growBtnDisabled: { opacity: 0.55 },
+  growBtn: { backgroundColor: '#E7C35A', borderRadius: 14, alignItems: 'center', justifyContent: 'center', elevation: 5 },
+  growBtnDisabled: { opacity: 0.5 },
   growText: { color: '#2B2106', fontWeight: '900' },
-  pressed: { transform: [{ scale: 0.985 }], opacity: 0.92 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18 },
-  modalCard: { backgroundColor: '#F1F3F6', alignItems: 'center' },
-  modalTitle: { fontWeight: '900', color: '#161616' },
-  modalSub: { marginTop: 6, fontWeight: '700', color: 'rgba(0,0,0,0.45)' },
-  grid: { width: '100%', flexDirection: 'row', flexWrap: 'wrap' },
-  gridItem: { backgroundColor: '#DADDE2', borderWidth: 1, borderColor: 'rgba(0,0,0,0.10)', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  gridIcon: { width: '68%', height: '68%' },
-  pricePill: { position: 'absolute', bottom: 10, left: 10, right: 10, backgroundColor: 'rgba(0,0,0,0.55)', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  priceText: { color: '#FFF', fontWeight: '900' },
-  ownedBadge: { position: 'absolute', top: 10, right: 10, width: 10, height: 10, borderRadius: 5, backgroundColor: '#7BCB72' },
-  closeBtn: { width: '100%', backgroundColor: 'rgba(15, 55, 35, 0.75)', alignItems: 'center', justifyContent: 'center' },
+
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center' },
+  modalCard: { backgroundColor: '#FFF', borderRadius: 20, padding: 16, alignItems: 'center' },
+  modalTitle: { fontSize: 20, fontWeight: '900', color: '#161616', marginBottom: 12 },
+
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' },
+  gridItem: { backgroundColor: '#F0F0F0', borderRadius: 12, alignItems: 'center', justifyContent: 'center', padding: 8, borderWidth: 1, borderColor: '#DDD' },
+  ownedItem: { opacity: 0.6, backgroundColor: '#E0E0E0' },
+
+  gridIcon: { width: '70%', height: '60%' },
+
+  pricePill: {
+    marginTop: 4,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  priceText: { fontSize: 12, fontWeight: '800', color: '#333' },
+
+  closeBtn: { marginTop: 16, width: '100%', height: 44, backgroundColor: '#0F3723', borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   closeText: { color: '#FFF', fontWeight: '900' },
 });
