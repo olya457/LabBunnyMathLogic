@@ -264,7 +264,7 @@ export default function RoomScreen() {
                 disabled={stage === 0}
                 style={[styles.downsizeBtn, stage === 0 && styles.downsizeBtnDisabled]}
               >
-                <Text style={[styles.downsizeText, stage === 0 && styles.downsizeTextDisabled]}>Downsize Bunny</Text>
+
               </Pressable>
             </View>
 
