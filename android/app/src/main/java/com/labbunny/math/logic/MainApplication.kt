@@ -1,4 +1,4 @@
-package com.labbunnymathlogic
+package com.labbunny.math.logic
 
 import android.app.Application
 import com.facebook.react.PackageList

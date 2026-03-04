@@ -1,4 +1,4 @@
-package com.labbunnymathlogic
+package com.labbunny.math.logic
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
