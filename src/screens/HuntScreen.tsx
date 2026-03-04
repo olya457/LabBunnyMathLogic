@@ -13,7 +13,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation, useFocusEffect } from '@react-navigation/native'; 
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { RootStackParamList } from '../navigation/types';
@@ -22,7 +22,7 @@ const BG = require('../assets/hunt_bg.png');
 const HERO = require('../assets/hunt_hero.png');
 const COOKIE = require('../assets/cookie.png');
 
-export const COOKIES_KEY = 'cookies_balance_v1'; 
+export const COOKIES_KEY = 'cookies_balance_v1';
 export const INITIAL_GIFT = 200;
 
 const TAB_BAR_HEIGHT = 100;
@@ -83,7 +83,6 @@ export default function HuntScreen() {
         }
       })();
 
-  
       Animated.parallel([
         Animated.timing(barFade, { toValue: 1, duration: 240, useNativeDriver: true }),
         Animated.timing(heroIn, { toValue: 1, duration: 520, useNativeDriver: true }),
@@ -117,13 +116,13 @@ export default function HuntScreen() {
   const heroStyle = {
     opacity: heroIn,
     transform: [
-      { 
+      {
         translateY: Animated.add(
           heroIn.interpolate({ inputRange: [0, 1], outputRange: [22, 0] }),
           heroFloat.interpolate({ inputRange: [0, 1], outputRange: [0, -8] })
-        ) 
+        ),
       },
-      { scale: heroIn.interpolate({ inputRange: [0, 1], outputRange: [0.94, 1] }) }
+      { scale: heroIn.interpolate({ inputRange: [0, 1], outputRange: [0.94, 1] }) },
     ],
   };
 
@@ -144,13 +143,24 @@ export default function HuntScreen() {
             </View>
           </Animated.View>
 
-          <View style={[styles.center, { paddingBottom: insets.bottom + TAB_BAR_HEIGHT }]}>
+          <View
+            style={[
+              styles.center,
+              {
+                paddingBottom:
+                  insets.bottom + TAB_BAR_HEIGHT + (Platform.OS === 'android' ? 20 : 0),
+              },
+            ]}
+          >
             <Animated.View style={[styles.heroWrap, heroStyle]}>
               <Image source={HERO} style={{ width: heroSize, height: heroSize }} resizeMode="contain" />
             </Animated.View>
 
             <Animated.View style={{ transform: [{ scale: btnScale }] }}>
-              <Pressable onPress={() => navigation.navigate('HuntPlay', { level: 1 })} style={[styles.btn, { width: btnW, height: btnH }]}>
+              <Pressable
+                onPress={() => navigation.navigate('HuntPlay', { level: 1 })}
+                style={[styles.btn, { width: btnW, height: btnH }]}
+              >
                 <Text style={styles.btnText}>Open Challenge</Text>
               </Pressable>
             </Animated.View>

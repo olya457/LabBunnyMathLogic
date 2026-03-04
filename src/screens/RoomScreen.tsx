@@ -25,8 +25,8 @@ type ShopItem = {
   icon: any;
 };
 
-const COST_TO_TEEN = 200;  
-const COST_TO_ADULT = 300; 
+const COST_TO_TEEN = 200;
+const COST_TO_ADULT = 300;
 
 const COST_DOWNSIZE = 70;
 
@@ -323,11 +323,11 @@ export default function RoomScreen() {
                 </Pressable>
               </View>
 
-              <View style={[styles.bunnyWrap, { bottom: clamp(H * 0.14, 106, 130) + 40 }]}>
+              <View style={[styles.bunnyWrap, { bottom: clamp(H * 0.14, 106, 130) + 70 }]}>
                 <Image source={bunnyImg} style={{ width: bunnyW, height: bunnyH }} resizeMode="contain" />
               </View>
 
-              <View style={[styles.growWrap, { paddingBottom: Math.max(insets.bottom + growBottomLift, 18) }]}>
+              <View style={[styles.growWrap, { paddingBottom: Math.max(insets.bottom + growBottomLift + 30, 18) }]}>
                 <Pressable
                   onPress={onGrow}
                   disabled={stage === 2}
