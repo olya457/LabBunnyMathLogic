@@ -1,4 +1,4 @@
-package com.labbunny.math.logic
+package com.crownmindmathlogic
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate

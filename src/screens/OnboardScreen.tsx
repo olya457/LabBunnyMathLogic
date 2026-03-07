@@ -48,7 +48,7 @@ export default function OnboardScreen({ navigation }: Props) {
         key: 'p1',
         title: 'Train Your Brain Daily',
         body:
-          'LabBunny helps you train logic, focus, and flexible thinking through short daily challenges in a fun format.',
+          'Train logic, focus, and flexible thinking through short daily challenges in a fun format.',
         image: ONB_1,
         cta: 'Start Training',
       },

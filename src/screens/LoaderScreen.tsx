@@ -107,7 +107,7 @@ export default function LoaderScreen({ navigation }: Props) {
       }
 
       .love {
-        background: rgb(0, 195, 255);
+        background: rgba(215, 179, 71, 1);
         display: flex;
         width: 30px;
         height: 30px;
@@ -126,7 +126,7 @@ export default function LoaderScreen({ navigation }: Props) {
         width: 30px;
         height: 30px;
         border-radius: 50%;
-        background: rgb(0, 217, 255);
+        background: rgba(207, 199, 42, 1);
       }
 
       .love::before { left: -16px; }
@@ -147,7 +147,7 @@ export default function LoaderScreen({ navigation }: Props) {
         content: '';
         height: 63px;
         position: absolute;
-        border-left: 12px solid rgb(30, 184, 255);
+        border-left: 12px solid rgba(186, 198, 26, 1);
         transform: rotate(45deg);
         border-radius: 8px;
         top: -4px;
@@ -166,7 +166,7 @@ export default function LoaderScreen({ navigation }: Props) {
         width: 100%;
         height: 55px;
         justify-content: space-between;
-        background-color: #05e6ff;
+        background-color: #d8c21cff;
         border-radius: 0 8px 8px;
         padding: 8px;
         box-sizing: border-box;
@@ -179,7 +179,7 @@ export default function LoaderScreen({ navigation }: Props) {
         height: 12px;
         top: 0;
         left: 0;
-        background-color: #f70b0b;
+        background-color: #d5411fff;
         border-radius: 50%;
         animation-delay: 2s;
         animation: blink 0.5s 2 forwards;
@@ -191,7 +191,7 @@ export default function LoaderScreen({ navigation }: Props) {
         height: 12px;
         top: 0;
         left: 0;
-        background-color: #ff0000;
+        background-color: #d03636ff;
         border-radius: 50%;
         animation-delay: 2s;
         animation: blink 0.5s 2 forwards;
